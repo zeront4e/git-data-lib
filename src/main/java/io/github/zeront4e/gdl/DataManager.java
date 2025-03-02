@@ -28,10 +28,6 @@ class DataManager {
 
     }
 
-    private record DataObjectDecryptionResult(boolean decryptionOccurred, GdlData<?> data) {
-
-    }
-
     public interface OnDataChangeCallback<Type> {
         void onDataAdded(File file, Type data);
         void onDataUpdated(File file, Type data);
@@ -75,10 +71,6 @@ class DataManager {
         objectMapper.findAndRegisterModules();
     }
 
-    public File getLocalRepoDirectoryFile() {
-        return localRepoDirectoryFile;
-    }
-
     <Type> Stream<GdlData<Type>> queryData(Class<Type> dataType) {
         return queryData(dataType, null);
     }
@@ -98,8 +90,6 @@ class DataManager {
         File[] dataContainerFiles = dataContainersDirectory.listFiles(File::isFile);
 
         if (dataContainerFiles != null) {
-            JavaType javaType = objectMapper.getTypeFactory().constructParametricType(GdlData.class, dataType);
-
             return Stream.of(dataContainerFiles).map(tmpFile -> {
                 //Check if the file should be skipped.
 
@@ -109,7 +99,7 @@ class DataManager {
                 //Try to parse the file content into a data-object container.
 
                 try {
-                    return objectMapper.<GdlData<Type>>readValue(tmpFile, javaType);
+                    return loadDataContainerFromDisk(tmpFile, dataType);
                 }
                 catch (Exception exception) {
                     LOGGER.warn("Failed to deserialize data from file: {}", tmpFile.getAbsolutePath(), exception);
@@ -131,6 +121,13 @@ class DataManager {
         File dataContainersDirectory = getDataContainerDirectory(dataType);
 
         File dataContainerFile = new File(dataContainersDirectory.getAbsolutePath() + "/" + id + ".yaml");
+
+        return loadDataContainerFromDisk(dataContainerFile, dataType);
+    }
+
+    private synchronized <Type> GdlData<Type> loadDataContainerFromDisk(File dataContainerFile,
+                                                                        Class<Type> dataType) throws Exception {
+        //Try to obtain data-object container file.
 
         if(!dataContainerFile.isFile())
             throw new IOException("Data container file not found: " + dataContainerFile.getAbsolutePath());
