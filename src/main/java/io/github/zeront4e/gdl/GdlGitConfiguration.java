@@ -36,7 +36,7 @@ public class GdlGitConfiguration {
 
     private Git cachedGitInstance = null;
 
-    public GdlGitConfiguration(GdlBaseConfiguration gdlBaseConfiguration) throws Exception {
+    public GdlGitConfiguration(GdlBaseConfiguration gdlBaseConfiguration) {
         this.gdlBaseConfiguration = gdlBaseConfiguration;
 
         this.gdlKeyBasedSshConfiguration = null;
@@ -138,7 +138,7 @@ public class GdlGitConfiguration {
     }
 
     private boolean isLocalRepositoryDirectoryAvailable() {
-        File localRepositoryDirectory = getLocalRepositoryDirectoryOrNull();
+        File localRepositoryDirectory = getExistingLocalRepositoryDirectoryOrNull();
 
         if(localRepositoryDirectory == null)
             return false;
@@ -149,7 +149,7 @@ public class GdlGitConfiguration {
     private Git openExistingRepositoryOrFail() throws IOException {
         //Open the repository from the given directory.
 
-        File localRepositoryDirectory = getLocalRepositoryDirectoryOrNull();
+        File localRepositoryDirectory = getExistingLocalRepositoryDirectoryOrNull();
 
         if(localRepositoryDirectory == null)
             throw new IOException("The local repository directory does not exist.");
@@ -162,12 +162,14 @@ public class GdlGitConfiguration {
     private Git createLocalRepositoryOrFail() throws IOException, GitAPIException {
         //Creates a local repository for the given directory.
 
-        File localRepositoryDirectory = getLocalRepositoryDirectoryOrNull();
-
-        if(localRepositoryDirectory == null)
-            throw new IOException("The local repository directory does not exist.");
+        File localRepositoryDirectory = gdlBaseConfiguration.getLocalRepositoryDirectory();
 
         LOGGER.info("Try to create new local repository: {}", localRepositoryDirectory.getAbsolutePath());
+
+        localRepositoryDirectory.mkdirs();
+
+        if(!localRepositoryDirectory.isDirectory())
+            throw new IOException("Unable to create the local repository directory.");
 
         return Git.init().setDirectory(localRepositoryDirectory).call();
     }
@@ -196,7 +198,7 @@ public class GdlGitConfiguration {
         return cloneCommand.call();
     }
 
-    private File getLocalRepositoryDirectoryOrNull() {
+    private File getExistingLocalRepositoryDirectoryOrNull() {
         if(!gdlBaseConfiguration.getLocalRepositoryDirectory().isDirectory())
             return null;
 
