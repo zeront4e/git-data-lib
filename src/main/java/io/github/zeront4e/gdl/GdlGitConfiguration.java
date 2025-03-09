@@ -121,22 +121,31 @@ public class GdlGitConfiguration {
         CommitCommand commitCommand = getCachedGitInstance().commit();
 
         if(gitAuthConfiguration instanceof GdlPasswordBasedSshConfiguration gdlPasswordBasedSshConfiguration) {
+            UsernamePasswordCredentialsProvider credentialsProvider;
+
             if(gitAuthConfiguration instanceof GdlGitHubTokenBasedSshConfiguration) {
                 LOGGER.debug("Using token-based GitHub SSH authentication for commit-command.");
+
+                credentialsProvider = createPasswordCredentialsProvider(gdlPasswordBasedSshConfiguration.getPassword(),
+                        gdlPasswordBasedSshConfiguration.getUsername());
             }
             else {
                 LOGGER.debug("Using password-based SSH authentication for commit-command.");
-            }
 
-            UsernamePasswordCredentialsProvider credentialsProvider =
-                    createPasswordCredentialsProvider(gdlPasswordBasedSshConfiguration.getUsername(),
-                            gdlPasswordBasedSshConfiguration.getPassword());
+                credentialsProvider = createPasswordCredentialsProvider(gdlPasswordBasedSshConfiguration.getUsername(),
+                        gdlPasswordBasedSshConfiguration.getPassword());
+            }
 
             commitCommand.setCredentialsProvider(credentialsProvider);
         }
         else if(gitAuthConfiguration instanceof GdlPasswordBasedHttpConfiguration gdlPasswordBasedHttpConfiguration) {
+            UsernamePasswordCredentialsProvider credentialsProvider;
+
             if(gitAuthConfiguration instanceof GdlGitHubTokenBasedHttpConfiguration) {
                 LOGGER.debug("Using token-based GitHub HTTP authentication for commit-command.");
+
+                credentialsProvider = createPasswordCredentialsProvider(gdlPasswordBasedHttpConfiguration.getPassword(),
+                        gdlPasswordBasedHttpConfiguration.getUsername());
             }
             else {
                 if(gitAuthConfiguration instanceof GdlTokenBasedHttpConfiguration) {
@@ -145,11 +154,10 @@ public class GdlGitConfiguration {
                 else {
                     LOGGER.debug("Using password-based HTTP authentication for commit-command.");
                 }
-            }
 
-            UsernamePasswordCredentialsProvider credentialsProvider =
-                    createPasswordCredentialsProvider(gdlPasswordBasedHttpConfiguration.getUsername(),
-                            gdlPasswordBasedHttpConfiguration.getPassword());
+                credentialsProvider = createPasswordCredentialsProvider(gdlPasswordBasedHttpConfiguration.getUsername(),
+                        gdlPasswordBasedHttpConfiguration.getPassword());
+            }
 
             commitCommand.setCredentialsProvider(credentialsProvider);
         }
@@ -178,8 +186,13 @@ public class GdlGitConfiguration {
             pushCommand.setCredentialsProvider(credentialsProvider);
         }
         else if(gitAuthConfiguration instanceof GdlPasswordBasedHttpConfiguration gdlPasswordBasedHttpConfiguration) {
+            UsernamePasswordCredentialsProvider credentialsProvider;
+
             if(gitAuthConfiguration instanceof GdlGitHubTokenBasedHttpConfiguration) {
                 LOGGER.debug("Using token-based GitHub HTTP authentication for push-command.");
+
+                credentialsProvider = createPasswordCredentialsProvider(gdlPasswordBasedHttpConfiguration.getPassword(),
+                        gdlPasswordBasedHttpConfiguration.getUsername());
             }
             else {
                 if(gitAuthConfiguration instanceof GdlTokenBasedHttpConfiguration) {
@@ -188,11 +201,10 @@ public class GdlGitConfiguration {
                 else {
                     LOGGER.debug("Using password-based HTTP authentication for push-command.");
                 }
-            }
 
-            UsernamePasswordCredentialsProvider credentialsProvider =
-                    createPasswordCredentialsProvider(gdlPasswordBasedHttpConfiguration.getUsername(),
-                            gdlPasswordBasedHttpConfiguration.getPassword());
+                credentialsProvider = createPasswordCredentialsProvider(gdlPasswordBasedHttpConfiguration.getUsername(),
+                        gdlPasswordBasedHttpConfiguration.getPassword());
+            }
 
             pushCommand.setCredentialsProvider(credentialsProvider);
         }
