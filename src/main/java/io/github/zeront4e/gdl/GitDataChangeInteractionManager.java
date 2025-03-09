@@ -164,7 +164,7 @@ class GitDataChangeInteractionManager implements DataManager.OnDataChangeCallbac
                                String message, AtomicBoolean changeOccurred) throws Exception {
         //Set relative file path to the data container file within the local repository directory.
 
-        int repoDirectoryPathLength = gdlGitConfiguration.getGdlLocalConfigurationOrNull().getLocalRepositoryDirectory()
+        int repoDirectoryPathLength = gdlGitConfiguration.getGdlBaseConfiguration().getLocalRepositoryDirectory()
                 .getAbsolutePath().length();
 
         String relativeFilePath = dataContainerFile.getAbsolutePath().substring(repoDirectoryPathLength + 1);
