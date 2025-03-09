@@ -1,8 +1,9 @@
 package io.github.zeront4e.gdl;
 
-import io.github.zeront4e.gdl.configurations.ssh.GdlKeyBasedSshConfiguration;
-import io.github.zeront4e.gdl.configurations.ssh.GdlPasswordBasedSshConfiguration;
-import io.github.zeront4e.gdl.configurations.ssh.GdlTokenBasedSshConfiguration;
+import io.github.zeront4e.gdl.configurations.common.GdlBaseConfiguration;
+import io.github.zeront4e.gdl.configurations.common.GdlLocalConfiguration;
+import io.github.zeront4e.gdl.configurations.common.GdlOnlineConfiguration;
+import io.github.zeront4e.gdl.configurations.ssh.*;
 import org.apache.sshd.common.config.keys.FilePasswordProvider;
 import org.apache.sshd.common.util.security.SecurityUtils;
 import org.eclipse.jgit.api.*;
@@ -31,50 +32,85 @@ public class GdlGitConfiguration {
 
     private final GdlBaseConfiguration gdlBaseConfiguration;
 
-    private final GdlKeyBasedSshConfiguration gdlKeyBasedSshConfiguration;
-    private final GdlPasswordBasedSshConfiguration gdlPasswordBasedSshConfiguration;
+    private final Object gitAuthConfiguration;
 
     private Git cachedGitInstance = null;
 
-    public GdlGitConfiguration(GdlBaseConfiguration gdlBaseConfiguration) {
-        this.gdlBaseConfiguration = gdlBaseConfiguration;
+    public GdlGitConfiguration(GdlLocalConfiguration gdlLocalConfiguration) {
+        gdlBaseConfiguration = gdlLocalConfiguration;
 
-        this.gdlKeyBasedSshConfiguration = null;
-        this.gdlPasswordBasedSshConfiguration = null;
+        gitAuthConfiguration = null;
     }
 
-    public GdlGitConfiguration(GdlBaseConfiguration gdlBaseConfiguration,
+    public GdlGitConfiguration(GdlOnlineConfiguration gdlOnlineConfiguration,
                                GdlKeyBasedSshConfiguration gdlKeyBasedSshConfiguration) throws Exception {
-        this.gdlBaseConfiguration = gdlBaseConfiguration;
+        gdlBaseConfiguration = gdlOnlineConfiguration;
 
-        this.gdlKeyBasedSshConfiguration = gdlKeyBasedSshConfiguration;
-        this.gdlPasswordBasedSshConfiguration = null;
+        gitAuthConfiguration = gdlKeyBasedSshConfiguration;
 
         setupKeyBasedSshSessionFactory(gdlKeyBasedSshConfiguration.getOptionKeyDecryptionPassword());
     }
 
-    public GdlGitConfiguration(GdlBaseConfiguration gdlBaseConfiguration,
+    public GdlGitConfiguration(GdlOnlineConfiguration gdlOnlineConfiguration,
                                GdlPasswordBasedSshConfiguration gdlPasswordBasedSshConfiguration) throws Exception {
-        this.gdlBaseConfiguration = gdlBaseConfiguration;
+        gdlBaseConfiguration = gdlOnlineConfiguration;
 
-        this.gdlKeyBasedSshConfiguration = null;
-        this.gdlPasswordBasedSshConfiguration = gdlPasswordBasedSshConfiguration;
+        gitAuthConfiguration = gdlPasswordBasedSshConfiguration;
 
         setupPasswordHintBasedSshSessionFactory();
     }
 
-    public GdlGitConfiguration(GdlBaseConfiguration gdlBaseConfiguration,
-                               GdlTokenBasedSshConfiguration gdlTokenBasedSshConfiguration) throws Exception {
-        this(gdlBaseConfiguration, (GdlPasswordBasedSshConfiguration) gdlTokenBasedSshConfiguration);
+    public GdlGitConfiguration(GdlOnlineConfiguration gdlOnlineConfiguration,
+                               GdlTokenBasedSshConfiguration gdlTokenBasedSshConfiguration) {
+        gdlBaseConfiguration = gdlOnlineConfiguration;
+
+        gitAuthConfiguration = gdlTokenBasedSshConfiguration;
+    }
+
+    public GdlGitConfiguration(GdlOnlineConfiguration gdlOnlineConfiguration,
+                               GdlPasswordBasedHttpConfiguration gdlPasswordBasedHttpConfiguration) {
+        gdlBaseConfiguration = gdlOnlineConfiguration;
+
+        gitAuthConfiguration = gdlPasswordBasedHttpConfiguration;
+    }
+
+    public GdlGitConfiguration(GdlOnlineConfiguration gdlOnlineConfiguration,
+                               GdlTokenBasedHttpConfiguration gdlTokenBasedHttpConfiguration) {
+        gdlBaseConfiguration = gdlOnlineConfiguration;
+
+        gitAuthConfiguration = gdlTokenBasedHttpConfiguration;
     }
 
     boolean isRemoteNotAvailable() {
-        return getBaseConfiguration().getGitRepositoryUrl() == null ||
-                (gdlKeyBasedSshConfiguration == null && gdlPasswordBasedSshConfiguration == null);
+        if(gdlBaseConfiguration instanceof GdlLocalConfiguration)
+            return true;
+
+        boolean isGitRepositoryNotAvailable = true;
+
+        if(gdlBaseConfiguration instanceof GdlOnlineConfiguration gdlOnlineConfiguration)
+            isGitRepositoryNotAvailable = gdlOnlineConfiguration.getGitRepositoryString() == null;
+
+        boolean isAuthenticationMissing = gitAuthConfiguration == null;
+
+        return isGitRepositoryNotAvailable || isAuthenticationMissing;
     }
 
-    GdlBaseConfiguration getBaseConfiguration() {
+    GdlBaseConfiguration getGdlBaseConfiguration() {
         return gdlBaseConfiguration;
+    }
+
+    GdlLocalConfiguration getGdlLocalConfigurationOrNull() {
+        if(gdlBaseConfiguration instanceof GdlLocalConfiguration gdlLocalConfiguration)
+            return gdlLocalConfiguration;
+
+        return null;
+    }
+
+    GdlOnlineConfiguration getGdlOnlineConfigurationOrNull() {
+        if(gdlBaseConfiguration instanceof GdlOnlineConfiguration gdlOnlineConfiguration)
+            return gdlOnlineConfiguration;
+
+        return null;
     }
 
     AddCommand createAddCommand() throws GitAPIException, IOException {
@@ -84,12 +120,36 @@ public class GdlGitConfiguration {
     CommitCommand createCommitCommand() throws GitAPIException, IOException {
         CommitCommand commitCommand = getCachedGitInstance().commit();
 
-        if(gdlPasswordBasedSshConfiguration != null) {
-            LOGGER.debug("Using password-based SSH authentication for commit-command.");
+        if(gitAuthConfiguration instanceof GdlPasswordBasedSshConfiguration gdlPasswordBasedSshConfiguration) {
+            if(gitAuthConfiguration instanceof GdlGitHubTokenBasedSshConfiguration) {
+                LOGGER.debug("Using token-based GitHub SSH authentication for commit-command.");
+            }
+            else {
+                LOGGER.debug("Using password-based SSH authentication for commit-command.");
+            }
 
             UsernamePasswordCredentialsProvider credentialsProvider =
-                    createUsernamePasswordCredentialsProvider(gdlPasswordBasedSshConfiguration.getUsername(),
+                    createPasswordCredentialsProvider(gdlPasswordBasedSshConfiguration.getUsername(),
                             gdlPasswordBasedSshConfiguration.getPassword());
+
+            commitCommand.setCredentialsProvider(credentialsProvider);
+        }
+        else if(gitAuthConfiguration instanceof GdlPasswordBasedHttpConfiguration gdlPasswordBasedHttpConfiguration) {
+            if(gitAuthConfiguration instanceof GdlGitHubTokenBasedHttpConfiguration) {
+                LOGGER.debug("Using token-based GitHub HTTP authentication for commit-command.");
+            }
+            else {
+                if(gitAuthConfiguration instanceof GdlTokenBasedHttpConfiguration) {
+                    LOGGER.debug("Using token-based HTTP authentication for commit-command.");
+                }
+                else {
+                    LOGGER.debug("Using password-based HTTP authentication for commit-command.");
+                }
+            }
+
+            UsernamePasswordCredentialsProvider credentialsProvider =
+                    createPasswordCredentialsProvider(gdlPasswordBasedHttpConfiguration.getUsername(),
+                            gdlPasswordBasedHttpConfiguration.getPassword());
 
             commitCommand.setCredentialsProvider(credentialsProvider);
         }
@@ -103,12 +163,36 @@ public class GdlGitConfiguration {
     PushCommand createPushCommand() throws GitAPIException, IOException {
         PushCommand pushCommand = getCachedGitInstance().push();
 
-        if(gdlPasswordBasedSshConfiguration != null) {
-            LOGGER.debug("Using password-based SSH authentication for push-command.");
+        if(gitAuthConfiguration instanceof GdlPasswordBasedSshConfiguration gdlPasswordBasedSshConfiguration) {
+            if(gitAuthConfiguration instanceof GdlGitHubTokenBasedSshConfiguration) {
+                LOGGER.debug("Using token-based GitHub SSH authentication for push-command.");
+            }
+            else {
+                LOGGER.debug("Using password-based SSH authentication for push-command.");
+            }
 
             UsernamePasswordCredentialsProvider credentialsProvider =
-                    createUsernamePasswordCredentialsProvider(gdlPasswordBasedSshConfiguration.getUsername(),
+                    createPasswordCredentialsProvider(gdlPasswordBasedSshConfiguration.getUsername(),
                             gdlPasswordBasedSshConfiguration.getPassword());
+
+            pushCommand.setCredentialsProvider(credentialsProvider);
+        }
+        else if(gitAuthConfiguration instanceof GdlPasswordBasedHttpConfiguration gdlPasswordBasedHttpConfiguration) {
+            if(gitAuthConfiguration instanceof GdlGitHubTokenBasedHttpConfiguration) {
+                LOGGER.debug("Using token-based GitHub HTTP authentication for push-command.");
+            }
+            else {
+                if(gitAuthConfiguration instanceof GdlTokenBasedHttpConfiguration) {
+                    LOGGER.debug("Using token-based HTTP authentication for push-command.");
+                }
+                else {
+                    LOGGER.debug("Using password-based HTTP authentication for push-command.");
+                }
+            }
+
+            UsernamePasswordCredentialsProvider credentialsProvider =
+                    createPasswordCredentialsProvider(gdlPasswordBasedHttpConfiguration.getUsername(),
+                            gdlPasswordBasedHttpConfiguration.getPassword());
 
             pushCommand.setCredentialsProvider(credentialsProvider);
         }
@@ -119,16 +203,29 @@ public class GdlGitConfiguration {
         return pushCommand;
     }
 
+    void setupLocalRepositoryOrFail() throws GitAPIException, IOException {
+        getCachedGitInstance();
+    }
+
     private Git getCachedGitInstance() throws IOException, GitAPIException {
         if(cachedGitInstance == null) {
+            LOGGER.info("Try to create cached repository instance.");
+
             if(isLocalRepositoryDirectoryAvailable()) {
+                LOGGER.info("A local repository already exists. Open existing Git repository.");
+
                 cachedGitInstance = openExistingRepositoryOrFail();
             }
             else {
                 if(isRemoteNotAvailable()) {
+                    LOGGER.info("No local repository was found and no remote is set. Create a new Git repository.");
+
                     cachedGitInstance = createLocalRepositoryOrFail();
                 }
                 else {
+                    LOGGER.info("No local repository was found, but a remote is set. Clone the existing Git " +
+                            "repository.");
+
                     cachedGitInstance = cloneRepositoryOrFail();
                 }
             }
@@ -175,24 +272,46 @@ public class GdlGitConfiguration {
     }
 
     private Git cloneRepositoryOrFail() throws GitAPIException {
+        GdlOnlineConfiguration gdlOnlineConfiguration = getGdlOnlineConfigurationOrNull();
+
         CloneCommand cloneCommand = Git.cloneRepository()
-                .setURI(gdlBaseConfiguration.getGitRepositoryUrl())
-                .setDirectory(gdlBaseConfiguration.getLocalRepositoryDirectory())
-                .setBranch(gdlBaseConfiguration.getBranch());
+                .setURI(gdlOnlineConfiguration.getGitRepositoryString())
+                .setDirectory(gdlOnlineConfiguration.getLocalRepositoryDirectory())
+                .setBranch(gdlOnlineConfiguration.getBranch());
 
-        LOGGER.info("Try to clone repository: {}", gdlBaseConfiguration.getGitRepositoryUrl());
+        LOGGER.info("Try to clone repository: {}", gdlOnlineConfiguration.getGitRepositoryString());
 
-        if(gdlPasswordBasedSshConfiguration != null) {
+        if(gitAuthConfiguration instanceof GdlPasswordBasedSshConfiguration gdlPasswordBasedSshConfiguration) {
             LOGGER.debug("Using password-based SSH authentication.");
 
             UsernamePasswordCredentialsProvider credentialsProvider =
-                    createUsernamePasswordCredentialsProvider(gdlPasswordBasedSshConfiguration.getUsername(),
+                    createPasswordCredentialsProvider(gdlPasswordBasedSshConfiguration.getUsername(),
                             gdlPasswordBasedSshConfiguration.getPassword());
 
             cloneCommand.setCredentialsProvider(credentialsProvider);
         }
+        else if(gitAuthConfiguration instanceof GdlPasswordBasedHttpConfiguration gdlPasswordBasedHttpConfiguration) {
+            LOGGER.debug("Using password-based HTTP authentication for clone-command.");
+
+            UsernamePasswordCredentialsProvider credentialsProvider;
+
+            if(gitAuthConfiguration instanceof GdlGitHubTokenBasedHttpConfiguration) {
+                LOGGER.info("Using token based GitHub HTTP authentication to clone the repository.");
+
+                credentialsProvider = createPasswordCredentialsProvider(gdlPasswordBasedHttpConfiguration.getPassword(),
+                        gdlPasswordBasedHttpConfiguration.getUsername());
+            }
+            else {
+                LOGGER.info("Using password based HTTP authentication to clone the repository.");
+
+                credentialsProvider = createPasswordCredentialsProvider(gdlPasswordBasedHttpConfiguration.getUsername(),
+                        gdlPasswordBasedHttpConfiguration.getPassword());
+            }
+
+            cloneCommand.setCredentialsProvider(credentialsProvider);
+        }
         else {
-            LOGGER.debug("Using key-based SSH authentication.");
+            LOGGER.debug("Using key-based SSH authentication for clone-command.");
         }
 
         return cloneCommand.call();
@@ -214,6 +333,7 @@ public class GdlGitConfiguration {
         //Setup SshdSessionFactory with password authentication hint.
 
         SshdSessionFactoryBuilder sshdSessionFactoryBuilder = createSshSessionFactoryBuilder();
+
         sshdSessionFactoryBuilder.setPreferredAuthentications("password");
 
         //Set global SshdSessionFactory instance.
@@ -229,7 +349,7 @@ public class GdlGitConfiguration {
         if(privateKeyFile == null)
             throw new Exception("No private key file found.");
 
-        LOGGER.debug("Found private key file: {}", privateKeyFile.getAbsolutePath());
+        LOGGER.info("Try to use private key file: {}", privateKeyFile.getAbsolutePath());
 
         FilePasswordProvider filePasswordProvider = null;
 
@@ -288,8 +408,7 @@ public class GdlGitConfiguration {
         SshSessionFactory.setInstance(sshSessionFactory);
     }
 
-    private UsernamePasswordCredentialsProvider createUsernamePasswordCredentialsProvider(String username,
-                                                                                          String password) {
+    private UsernamePasswordCredentialsProvider createPasswordCredentialsProvider(String username, String password) {
         //Create a UsernamePasswordCredentialsProvider with the given username and password.
 
         return new UsernamePasswordCredentialsProvider(username, password);
@@ -298,13 +417,13 @@ public class GdlGitConfiguration {
     private File getKnownHostsFileOrNull() {
         //Returns the default known-hosts file if it exists, or null otherwise.
 
-        if(gdlKeyBasedSshConfiguration != null) {
+        if(gitAuthConfiguration instanceof GdlKeyBasedSshConfiguration gdlPasswordBasedSshConfiguration) {
             LOGGER.debug("Try to load known-hosts file from key-based SSH configuration.");
 
-            return gdlKeyBasedSshConfiguration.getKnownHostsFile();
+            return gdlPasswordBasedSshConfiguration.getKnownHostsFile();
         }
 
-        if(gdlPasswordBasedSshConfiguration != null) {
+        if(gitAuthConfiguration instanceof GdlPasswordBasedSshConfiguration gdlPasswordBasedSshConfiguration) {
             LOGGER.debug("Try to load known-hosts file from password-based SSH configuration.");
 
             return gdlPasswordBasedSshConfiguration.getKnownHostsFile();
@@ -326,7 +445,7 @@ public class GdlGitConfiguration {
     private File getPrivateKeyFileOrNull() {
         //Returns a default private key file if it exists, or null otherwise.
 
-        if(gdlKeyBasedSshConfiguration != null) {
+        if(gitAuthConfiguration instanceof GdlKeyBasedSshConfiguration gdlKeyBasedSshConfiguration) {
             LOGGER.debug("Try to load private key file from key-based SSH configuration.");
 
             return gdlKeyBasedSshConfiguration.getPrivateKeyFile();
