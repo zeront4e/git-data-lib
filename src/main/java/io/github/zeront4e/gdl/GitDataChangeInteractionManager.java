@@ -1,7 +1,6 @@
 package io.github.zeront4e.gdl;
 
-import org.eclipse.jgit.api.AddCommand;
-import org.eclipse.jgit.api.CommitCommand;
+import io.github.zeront4e.gdl.configurations.common.GdlOnlineConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,32 +10,52 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Promotes changes in a data directory to the corresponding Git repository.
  */
-public class GitDataChangeInteractionManager implements DataManager.OnDataChangeCallback<GdlData<?>> {
+class GitDataChangeInteractionManager implements DataManager.OnDataChangeCallback<GdlData<?>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(GitDataChangeInteractionManager.class);
 
     private final GdlGitConfiguration gdlGitConfiguration;
 
     private final AtomicBoolean changeOccurred;
 
-    GitDataChangeInteractionManager(GdlGitConfiguration gdlGitConfiguration) {
+    private final Runnable pushRunnable;
+
+    private final boolean immediatePush;
+
+    public GitDataChangeInteractionManager(GdlGitConfiguration gdlGitConfiguration) {
         this.gdlGitConfiguration = gdlGitConfiguration;
 
         changeOccurred = new AtomicBoolean(false);
 
-        Runnable pushRunnable = createPushRunnable(gdlGitConfiguration);
+        pushRunnable = createPushRunnable(gdlGitConfiguration);
 
-        if(gdlGitConfiguration.getBaseConfiguration().getPushDelayMilliseconds() > 0) {
-            LOGGER.info("Starting push thread with a delay of {} milliseconds between pushes.",
-                    gdlGitConfiguration.getBaseConfiguration().getPushDelayMilliseconds());
+        GdlOnlineConfiguration gdlOnlineConfiguration = gdlGitConfiguration.getGdlOnlineConfigurationOrNull();
 
-            Runnable pushThreadRunnable = createPushThreadRunnable(changeOccurred,
-                    gdlGitConfiguration.getBaseConfiguration().getPushDelayMilliseconds(), pushRunnable);
+        if(gdlOnlineConfiguration == null) {
+            LOGGER.info("No online configuration provided, disable push operation.");
 
-            Thread gitPushThread = createPushThread(pushThreadRunnable);
-            gitPushThread.start();
+            immediatePush = false;
         }
         else {
-            LOGGER.info("Push changes immediately after commit.");
+            LOGGER.info("Online configuration provided, enable push operation.");
+
+            if(gdlOnlineConfiguration.getPushDelayMilliseconds() > 0) {
+                immediatePush = false;
+
+                LOGGER.info("Starting push thread with a delay of {} milliseconds between pushes.",
+                        gdlOnlineConfiguration.getPushDelayMilliseconds());
+
+                Runnable pushThreadRunnable = createPushThreadRunnable(changeOccurred,
+                        gdlOnlineConfiguration.getPushDelayMilliseconds(), pushRunnable);
+
+                Thread gitPushThread = createPushThread(pushThreadRunnable);
+
+                gitPushThread.start();
+            }
+            else {
+                immediatePush = true;
+
+                LOGGER.info("Push changes immediately after commit.");
+            }
         }
     }
 
@@ -91,7 +110,7 @@ public class GitDataChangeInteractionManager implements DataManager.OnDataChange
         };
     }
 
-    private Runnable createPushThreadRunnable(AtomicBoolean commitOccurred, int pushDelayMilliseconds,
+    private Runnable createPushThreadRunnable(AtomicBoolean changeOccurred, int pushDelayMilliseconds,
                                               Runnable pushRunnable) {
         return () -> {
             long lastPushTime = System.currentTimeMillis();
@@ -99,7 +118,12 @@ public class GitDataChangeInteractionManager implements DataManager.OnDataChange
             try {
                 while(!Thread.currentThread().isInterrupted()) {
                     if(System.currentTimeMillis() - lastPushTime >= pushDelayMilliseconds) {
-                        if(commitOccurred.get()) {
+                        if(changeOccurred.get()) {
+                            LOGGER.debug("Delay was passed and change occurred. Try to push changes to Git " +
+                                    "repository.");
+
+                            changeOccurred.set(false);
+
                             lastPushTime = System.currentTimeMillis();
 
                             pushRunnable.run();
@@ -138,12 +162,35 @@ public class GitDataChangeInteractionManager implements DataManager.OnDataChange
 
     private void commitChanges(GdlGitConfiguration gdlGitConfiguration, File dataContainerFile,
                                String message, AtomicBoolean changeOccurred) throws Exception {
-        AddCommand addCommand = gdlGitConfiguration.createAddCommand().addFilepattern(dataContainerFile.getName());
-        addCommand.call();
+        //Set relative file path to the data container file within the local repository directory.
 
-        CommitCommand commitCommand = gdlGitConfiguration.createCommitCommand();
-        commitCommand.setMessage(message).call();
+        int repoDirectoryPathLength = gdlGitConfiguration.getGdlLocalConfigurationOrNull().getLocalRepositoryDirectory()
+                .getAbsolutePath().length();
+
+        String relativeFilePath = dataContainerFile.getAbsolutePath().substring(repoDirectoryPathLength + 1);
+
+        relativeFilePath = relativeFilePath.replace(File.separator, "/");
+
+        //Execute add command.
+
+        gdlGitConfiguration.createAddCommand()
+                .addFilepattern(relativeFilePath)
+                .call();
+
+        //Execute commit command.
+
+        gdlGitConfiguration.createCommitCommand()
+                .setMessage(message)
+                .call();
 
         changeOccurred.set(true);
+
+        //Execute push runnable, if immediate push is configured.
+
+        if(immediatePush) {
+            LOGGER.debug("Perform immediate push.");
+
+            pushRunnable.run();
+        }
     }
 }
