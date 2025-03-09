@@ -1,6 +1,8 @@
 # Git Data Library (Gdl)
 
-Git Data Library (Gdl) is a Java library that provides a simple and efficient way to store, retrieve, and manage data objects using Git as a persistent storage backend. This library allows you to treat Git repositories as data stores, with automatic versioning, history tracking, and collaboration capabilities inherent to Git.
+Git Data Library (Gdl) is a Java library that provides a simple and efficient way to store, retrieve, and manage data 
+objects using Git as a persistent storage backend. This library allows you to treat Git repositories as data stores, 
+with automatic versioning, history tracking, and collaboration capabilities inherent to Git.
 
 ## Features
 
@@ -38,7 +40,7 @@ First it is necessary to create a configuration for a Git repository. There are 
 The most basic configuration option is just to provide a local repository directory:
 
 ```java
-import io.github.zeront4e.gdl.GdlBaseConfiguration;
+import io.github.zeront4e.gdl.configurations.common.GdlLocalConfiguration;
 import io.github.zeront4e.gdl.GdlGitConfiguration;
 
 import java.io.File;
@@ -47,21 +49,23 @@ import java.util.Map;
 public static void main(String[] args) {
     File repoDir = new File("/path/to/local/repo");
 
-    //Provide optional secrets to encrypt your data-objects with, if they should be protected.
+    //Provide optional secrets to encrypt your data-objects with, if they should be protected (see examples below).
     Map<String, String> credentials = Map.of(
             "secretName1", "secretValue1",
             "secretName2", "secretValue2"
     );
+    
+    String branch = "main";
 
-    GdlBaseConfiguration baseConfig = new GdlBaseConfiguration(repoDir, credentials);
+    GdlLocalConfiguration configuration = new GdlLocalConfiguration(repoDir, credentials, branch);
 
-    GdlGitConfiguration gitConfig = new GdlGitConfiguration(baseConfig);
+    GdlGitConfiguration gitConfig = new GdlGitConfiguration(configuration);
 }
 ```
 
 ### Remote repository configuration
 
-If you want to push the data to a remote repository you must provide a detailed configuration. You can specify a 
+If you want to push the data to a remote repository you must provide a more detailed configuration. You can specify a 
 custom branch, the remote URL to the existing repository to clone and sync data to, and an optional push delay, 
 before changes are actually pushed to the remote repository.
 
@@ -74,8 +78,10 @@ There are also multiple ways to authenticate against the remote repository (orig
 Credentials based authentication:
 
 ```java
-import io.github.zeront4e.gdl.GdlBaseConfiguration;
+import io.github.zeront4e.gdl.configurations.common.GdlLocalConfiguration;
+import io.github.zeront4e.gdl.GdlOfflineConfiguration;
 import io.github.zeront4e.gdl.GdlGitConfiguration;
+import io.github.zeront4e.gdl.configurations.common.GdlOnlineConfiguration;
 import io.github.zeront4e.gdl.configurations.ssh.GdlPasswordBasedSshConfiguration;
 
 import java.io.File;
@@ -89,10 +95,12 @@ public static void main(String[] args) {
             "secretName2", "secretValue2"
     );
 
-    GdlBaseConfiguration advancedBaseConfiguration = new GdlBaseConfiguration(
+    String branch = "main";
+    
+    GdlOnlineConfiguration configuration = new GdlOnlineConfiguration(
             repoDir,
             credentials,
-            "main",                           //branch name
+            branch,                           
             "https://github.com/user/repo",   //remote repository URL
             0                                 //push delay in milliseconds (or 0 to set none)
     );
@@ -104,7 +112,7 @@ public static void main(String[] args) {
     GdlPasswordBasedSshConfiguration passwordBasedSshConfiguration = new GdlPasswordBasedSshConfiguration("username",
             "password", knownHostsFile);
 
-    GdlGitConfiguration gdlGitConfiguration = new GdlGitConfiguration(advancedBaseConfiguration,
+    GdlGitConfiguration gdlGitConfiguration = new GdlGitConfiguration(configuration,
             passwordBasedSshConfiguration);
 }
 ```
@@ -112,7 +120,8 @@ public static void main(String[] args) {
 Token based authentication:
 
 ```java
-import io.github.zeront4e.gdl.GdlBaseConfiguration;
+import io.github.zeront4e.gdl.configurations.common.GdlLocalConfiguration;
+import io.github.zeront4e.gdl.GdlOfflineConfiguration;
 import io.github.zeront4e.gdl.GdlGitConfiguration;
 import io.github.zeront4e.gdl.configurations.ssh.GdlTokenBasedSshConfiguration;
 
@@ -127,10 +136,12 @@ public static void main(String[] args) {
             "secretName2", "secretValue2"
     );
 
-    GdlBaseConfiguration advancedBaseConfiguration = new GdlBaseConfiguration(
+    String branch = "main";
+
+    GdlLocalConfiguration configuration = new GdlLocalConfiguration(
             repoDir,
             credentials,
-            "main",                           //branch name
+            branch,
             "https://github.com/user/repo",   //remote repository URL
             0                                 //push delay in milliseconds (or 0 to set none)
     );
@@ -139,10 +150,10 @@ public static void main(String[] args) {
 
     //Token based authentication:
 
-    GdlTokenBasedSshConfiguration tokenBasedSshConfiguration = new GdlTokenBasedSshConfiguration("token", 
+    GdlTokenBasedSshConfiguration tokenBasedSshConfiguration = new GdlTokenBasedSshConfiguration("token",
             knownHostsFile);
 
-    GdlGitConfiguration gdlGitConfiguration = new GdlGitConfiguration(advancedBaseConfiguration,
+    GdlGitConfiguration gdlGitConfiguration = new GdlGitConfiguration(configuration,
             tokenBasedSshConfiguration);
 }
 ```
@@ -150,7 +161,8 @@ public static void main(String[] args) {
 Asymmetric key based authentication:
 
 ```java
-import io.github.zeront4e.gdl.GdlBaseConfiguration;
+import io.github.zeront4e.gdl.configurations.common.GdlLocalConfiguration;
+import io.github.zeront4e.gdl.GdlOfflineConfiguration;
 import io.github.zeront4e.gdl.GdlGitConfiguration;
 import io.github.zeront4e.gdl.configurations.ssh.GdlKeyBasedSshConfiguration;
 
@@ -165,10 +177,12 @@ public static void main(String[] args) {
             "secretName2", "secretValue2"
     );
 
-    GdlBaseConfiguration advancedBaseConfiguration = new GdlBaseConfiguration(
+    String branch = "main";
+    
+    GdlLocalConfiguration configuration = new GdlLocalConfiguration(
             repoDir,
             credentials,
-            "main",                           //branch name
+            branch,
             "https://github.com/user/repo",   //remote repository URL
             0                                 //push delay in milliseconds (or 0 to set none)
     );
@@ -179,10 +193,10 @@ public static void main(String[] args) {
 
     File privateKeyFile = new File(".ssh/id_rsa");
 
-    GdlKeyBasedSshConfiguration keyBasedSshConfiguration = new GdlKeyBasedSshConfiguration(privateKeyFile, 
+    GdlKeyBasedSshConfiguration keyBasedSshConfiguration = new GdlKeyBasedSshConfiguration(privateKeyFile,
             knownHostsFile, "optionalKeyDecryptionPassword");
 
-    GdlGitConfiguration gdlGitConfiguration = new GdlGitConfiguration(advancedBaseConfiguration, 
+    GdlGitConfiguration gdlGitConfiguration = new GdlGitConfiguration(configuration,
             keyBasedSshConfiguration);
 }
 ```
@@ -194,6 +208,7 @@ After you created a configuration, you can create a Gdl instance, to add, query,
 ```java
 import io.github.zeront4e.gdl.*;
 import io.github.zeront4e.gdl.annotations.GdlCachedProperty;
+import io.github.zeront4e.gdl.configurations.common.GdlLocalConfiguration;
 
 import java.io.File;
 import java.util.List;
@@ -251,9 +266,11 @@ public static void main(String[] args) {
 
     File repoDir = new File("/path/to/local/repo");
 
-    GdlBaseConfiguration baseConfig = new GdlBaseConfiguration(repoDir, Map.of());
+    String branch = "main";
+    
+    GdlLocalConfiguration configuration = new GdlLocalConfiguration(repoDir, Map.of(), branch);
 
-    GdlGitConfiguration gdlGitConfiguration = new GdlGitConfiguration(baseConfig);
+    GdlGitConfiguration gdlGitConfiguration = new GdlGitConfiguration(configuration);
 
     //Create test-data.
 
@@ -297,7 +314,7 @@ public static void main(String[] args) {
             .setFilter(tmpData -> tmpData.getData().getTitle().endsWith("-updated"));
 
     System.out.println("Found data-objects: " + aiPromptConfigurations.size());
-    
+
     boolean wasDataDeleted = gdlDataRepository.deleteData(aiPromptConfigurationGdlData2);
 
     System.out.println("Was data deleted? -> " + wasDataDeleted);
@@ -315,7 +332,7 @@ You can use these encryption methods separately or combine them for enhanced sec
 
 ##### Field-level encryption
 
-Use the "GdlSecretProperty" annotation to encrypt specific fields within your data object:
+Use the `@GdlSecretProperty` annotation to encrypt specific fields within your data object:
 
 ```java
 import io.github.zeront4e.gdl.annotations.GdlSecretProperty;
@@ -372,6 +389,7 @@ decrypted when queried:
 
 ```java
 import io.github.zeront4e.gdl.*;
+import io.github.zeront4e.gdl.configurations.common.GdlLocalConfiguration;
 
 import java.util.Map;
 import java.util.Optional;
@@ -384,8 +402,12 @@ public static void main(String[] args) {
             "api-secret", "another-strong-encryption-key"
     );
 
-    GdlBaseConfiguration baseConfig = new GdlBaseConfiguration(repoDir, secrets);
-    GdlGitConfiguration gitConfig = new GdlGitConfiguration(baseConfig);
+    String branch = "main";
+
+    GdlLocalConfiguration configuration = new GdlLocalConfiguration(repoDir, secrets, branch);
+    
+    GdlGitConfiguration gitConfig = new GdlGitConfiguration(configuration);
+    
     Gdl gdl = new Gdl(gitConfig);
 
     //Create and store data.
@@ -405,7 +427,7 @@ public static void main(String[] args) {
             .filter(tmpData -> tmpData.getData().getApiKey().startsWith("api-xyz-"))
             .findFirst();
 
-    System.out.println("Found API key: " + (optionalUserCredentials.isPresent() ? 
+    System.out.println("Found API key: " + (optionalUserCredentials.isPresent() ?
             optionalUserCredentials.get().getApiKey() : "-"));
 }
 ```
@@ -414,7 +436,7 @@ public static void main(String[] args) {
 
 When using object-level encryption, the entire object is encrypted as a single unit. 
 
-You can use the "GdlSecretDataRepository" annotation to encrypt an entire data object:
+You can use the `@GdlSecretDataRepository` annotation to encrypt an entire data object:
 
 ```java
 import io.github.zeront4e.gdl.annotations.GdlSecretProperty;
@@ -470,3 +492,23 @@ public class UserCredentials {
 
 You can add, query, update and delete data-objects as seen in the previous example. The only difference is to also 
 provide the "user-data-secret"-secret.
+
+### Usa a custom repository name
+
+### Use a custom repository name (@GdlDataRepositoryName)
+
+By default, Gdl uses the class name of your data object as the repository name. However, you can specify a custom 
+repository name using the `@GdlDataRepositoryName` annotation. This ensures that the repository name stays the same,
+even if the data object class is renamed.
+
+```java
+import io.github.zeront4e.gdl.annotations.GdlDataRepositoryName;
+
+@GdlDataRepositoryName("user-credentials")
+public class UserCredentials {
+    private String username;
+    private String password;
+    
+    // Constructors, getters, setters...
+}
+```
