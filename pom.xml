@@ -6,21 +6,29 @@
 	<groupId>io.github.zeront4e.gdl</groupId>
 	<artifactId>git-data-lib</artifactId>
 	<version>1.0.0</version>
+	<packaging>jar</packaging>
 
 	<name>git-data-lib</name>
+
+	<description>
+		A Java library that provides a simple and efficient way to store, retrieve, and manage data objects using Git
+		as a persistent storage backend.
+	</description>
+
+	<url>https://github.com/zeront4e/git-data-lib</url>
+
+	<licenses>
+		<license>
+			<name>Apache License 2.0</name>
+			<url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		</license>
+	</licenses>
 
 	<properties>
 		<java.version>21</java.version>
 	</properties>
 
 	<dependencies>
-		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<version>1.18.36</version>
-			<scope>provided</scope>
-		</dependency>
-
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-core</artifactId>
@@ -72,14 +80,51 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+	<distributionManagement>
+		<repository>
+			<id>github</id>
+			<name>zeront4e</name>
+			<url>https://maven.pkg.github.com/zeront4e/git-data-lib</url>
+		</repository>
+	</distributionManagement>
+
 	<build>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.14.0</version>
+
 				<configuration>
 					<source>16</source>
 					<target>16</target>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>3.3.1</version>
+
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<artifactId>maven-deploy-plugin</artifactId>
+				<version>3.1.4</version>
+
+				<configuration>
+					<altDeploymentRepository>
+						local-staging-repository::default::file://${project.build.directory}/mvn-artifacts
+					</altDeploymentRepository>
 				</configuration>
 			</plugin>
 		</plugins>
