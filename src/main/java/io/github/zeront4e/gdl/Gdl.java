@@ -1,10 +1,18 @@
 package io.github.zeront4e.gdl;
 
+import org.eclipse.jgit.api.errors.GitAPIException;
+
 import java.io.File;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * The main entry point for the Git data library (GDL).
+ * This class provides access to data repositories that store and manage data objects in a Git repository.
+ * It handles the initialization of the Git repository and manages data repositories for different data types.
+ */
 public class Gdl {
     private final Map<Class<?>, GdlDataRepository<?>> classGdlDataRepositoryMap =
             Collections.synchronizedMap(new HashMap<>());
@@ -14,11 +22,18 @@ public class Gdl {
     /**
      * Constructs a new Gdl instance with the given GdlGitConfiguration.
      * @param gdlGitConfiguration The GdlGitConfiguration to use for this Gdl instance.
+     * @throws GitAPIException Exception that occurs if the initial clone attempt of a remote repository fails.
+     * @throws IOException Exception that occurs if the remote repository couldn't be cloned to the local filesystem or
+     * an existing local repository couldn't be opened.
      */
-    public Gdl(GdlGitConfiguration gdlGitConfiguration) {
-        Map<String, String> secretNameSecretMap = gdlGitConfiguration.getBaseConfiguration().getSecretNameSecretMap();
+    public Gdl(GdlGitConfiguration gdlGitConfiguration) throws GitAPIException, IOException {
+        Map<String, String> secretNameSecretMap = gdlGitConfiguration.getGdlBaseConfiguration()
+                .getSecretNameSecretMap();
 
-        File repoDirectoryFile = gdlGitConfiguration.getBaseConfiguration().getLocalRepositoryDirectory();
+        File repoDirectoryFile = gdlGitConfiguration.getGdlBaseConfiguration().getLocalRepositoryDirectory();
+
+        //We always try to initialize the local repository first, if it doesn't exist.
+        gdlGitConfiguration.setupLocalRepositoryOrFail();
 
         GitDataChangeInteractionManager gitDataChangeInteractionManager =
                 new GitDataChangeInteractionManager(gdlGitConfiguration);

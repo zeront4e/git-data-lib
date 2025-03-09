@@ -35,7 +35,6 @@ class AesEncryptionUtil {
     /**
      * Encrypts a plaintext string using AES encryption and a provided password.
      * The encrypted result is returned as a Base64-encoded string.
-     *
      * @param plaintext The string to be encrypted.
      * @param password  The password used for encryption.
      * @return A Base64-encoded string representing the encrypted data.
@@ -51,7 +50,6 @@ class AesEncryptionUtil {
      * Encrypts the given plaintext using AES encryption with the provided password.
      * This method generates a salt and initialization vector (IV), derives a key from the password,
      * and performs the encryption using AES/GCM/NoPadding algorithm.
-     *
      * @param plaintext The byte array containing the data to be encrypted.
      * @param password  The password used for deriving the encryption key.
      * @return A byte array containing the encrypted data, including the salt and IV.
@@ -84,7 +82,6 @@ class AesEncryptionUtil {
 
     /**
      * Decrypts a Base64-encoded encrypted string using AES decryption and a provided password.
-     * 
      * @param ciphertext The Base64-encoded encrypted string to be decrypted.
      * @param password   The password used for decryption. This should be the same password used for encryption.
      * @return A String containing the decrypted plaintext.
@@ -103,7 +100,6 @@ class AesEncryptionUtil {
      * Decrypts the given ciphertext using AES decryption with the provided password.
      * This method extracts the salt and initialization vector (IV) from the ciphertext,
      * derives the key from the password, and performs the decryption using AES/GCM/NoPadding algorithm.
-     *
      * @param ciphertext The byte array containing the encrypted data, including the salt and IV.
      *                   The expected structure is: [salt][iv][encrypted data].
      * @param password   The password used for deriving the decryption key.

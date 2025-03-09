@@ -20,12 +20,10 @@ import java.util.stream.Stream;
  * Class to manage data-objects stored in a local directory.
  */
 class DataManager {
-    interface DataSkipCallback {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DataManager.class);
+
+    public interface DataSkipCallback {
         boolean skipFile(File file);
-    }
-
-    private record SecretContainer(String secretName, String secretValue) {
-
     }
 
     public interface OnDataChangeCallback<Type> {
@@ -34,7 +32,9 @@ class DataManager {
         void onDataDeleted(File file, Type data);
     }
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DataManager.class);
+    private record SecretContainer(String secretName, String secretValue) {
+
+    }
 
     /**
      * Directory to store serialized data.
@@ -233,7 +233,8 @@ class DataManager {
         objectMapper.writeValue(dataContainerFile, dataContainerToSerialize);
     }
 
-    private <Type> GdlData<Type> decryptDataContainerObjectIfEncrypted(Class<Type> dataType, GdlData<?> deserializedDataContainer) throws Exception {
+    private <Type> GdlData<Type> decryptDataContainerObjectIfEncrypted(Class<Type> dataType,
+                                                                       GdlData<?> deserializedDataContainer) throws Exception {
         GdlSecretDataRepository gdlSecretDataRepository = dataType.getAnnotation(GdlSecretDataRepository.class);
 
         if(gdlSecretDataRepository != null && deserializedDataContainer.getData() instanceof String encryptedDataString) {
@@ -253,8 +254,8 @@ class DataManager {
                     Type decryptedType = objectMapper.readValue(decryptedData, dataType);
 
                     deserializedDataContainer = new GdlData<>(deserializedDataContainer.getId(),
-                            deserializedDataContainer.getCreateTimestamp(), deserializedDataContainer.getUpdateTimestamp(),
-                            decryptedType);
+                            deserializedDataContainer.getCreateTimestamp(),
+                            deserializedDataContainer.getUpdateTimestamp(), decryptedType);
                 }
                 catch (Exception exception) {
                     throw new Exception("Failed to decrypt encrypted data in data-container, despite set prefix.",
@@ -496,7 +497,8 @@ class DataManager {
         }
     }
 
-    private void decryptStringFieldValue(Field stringField, Object dataObject, SecretContainer secretContainer) throws Exception {
+    private void decryptStringFieldValue(Field stringField, Object dataObject,
+                                         SecretContainer secretContainer) throws Exception {
         //Encrypt object value.
 
         LOGGER.debug("Decrypting string field {} of type {} for secret \"{}\".", stringField.getName(),

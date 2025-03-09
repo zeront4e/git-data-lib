@@ -16,7 +16,7 @@ public class GdlData<Data> {
     private Data data;
 
     GdlData() {
-        //Ignore...
+        //Ignore (necessary for deserialization)...
     }
 
     GdlData(String id, long createTimestamp, long updateTimestamp, Data data) {
