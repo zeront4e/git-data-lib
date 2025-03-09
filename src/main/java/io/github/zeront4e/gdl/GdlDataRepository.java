@@ -191,8 +191,6 @@ public class GdlDataRepository<Type> {
                     try {
                         Field foreignField = null;
 
-                        Field[] declaredFields = gdlData.getData().getClass().getDeclaredFields();
-
                         try {
                             foreignField = gdlData.getData().getClass().getDeclaredField(tmpField.getName());
                         }
