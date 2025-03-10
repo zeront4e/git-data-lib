@@ -61,10 +61,12 @@ public class GdlGitConfiguration {
     }
 
     public GdlGitConfiguration(GdlOnlineConfiguration gdlOnlineConfiguration,
-                               GdlTokenBasedSshConfiguration gdlTokenBasedSshConfiguration) {
+                               GdlTokenBasedSshConfiguration gdlTokenBasedSshConfiguration) throws Exception {
         gdlBaseConfiguration = gdlOnlineConfiguration;
 
         gitAuthConfiguration = gdlTokenBasedSshConfiguration;
+
+        setupPasswordHintBasedSshSessionFactory();
     }
 
     public GdlGitConfiguration(GdlOnlineConfiguration gdlOnlineConfiguration,
@@ -121,20 +123,11 @@ public class GdlGitConfiguration {
         CommitCommand commitCommand = getCachedGitInstance().commit();
 
         if(gitAuthConfiguration instanceof GdlPasswordBasedSshConfiguration gdlPasswordBasedSshConfiguration) {
-            UsernamePasswordCredentialsProvider credentialsProvider;
+            LOGGER.debug("Using password-based SSH authentication for commit-command.");
 
-            if(gitAuthConfiguration instanceof GdlGitHubTokenBasedSshConfiguration) {
-                LOGGER.debug("Using token-based GitHub SSH authentication for commit-command.");
-
-                credentialsProvider = createPasswordCredentialsProvider(gdlPasswordBasedSshConfiguration.getPassword(),
-                        gdlPasswordBasedSshConfiguration.getUsername());
-            }
-            else {
-                LOGGER.debug("Using password-based SSH authentication for commit-command.");
-
-                credentialsProvider = createPasswordCredentialsProvider(gdlPasswordBasedSshConfiguration.getUsername(),
-                        gdlPasswordBasedSshConfiguration.getPassword());
-            }
+            UsernamePasswordCredentialsProvider credentialsProvider =
+                    createPasswordCredentialsProvider(gdlPasswordBasedSshConfiguration.getUsername(),
+                            gdlPasswordBasedSshConfiguration.getPassword());
 
             commitCommand.setCredentialsProvider(credentialsProvider);
         }
@@ -172,12 +165,7 @@ public class GdlGitConfiguration {
         PushCommand pushCommand = getCachedGitInstance().push();
 
         if(gitAuthConfiguration instanceof GdlPasswordBasedSshConfiguration gdlPasswordBasedSshConfiguration) {
-            if(gitAuthConfiguration instanceof GdlGitHubTokenBasedSshConfiguration) {
-                LOGGER.debug("Using token-based GitHub SSH authentication for push-command.");
-            }
-            else {
-                LOGGER.debug("Using password-based SSH authentication for push-command.");
-            }
+            LOGGER.debug("Using password-based SSH authentication for push-command.");
 
             UsernamePasswordCredentialsProvider credentialsProvider =
                     createPasswordCredentialsProvider(gdlPasswordBasedSshConfiguration.getUsername(),
@@ -294,7 +282,7 @@ public class GdlGitConfiguration {
         LOGGER.info("Try to clone repository: {}", gdlOnlineConfiguration.getGitRepositoryString());
 
         if(gitAuthConfiguration instanceof GdlPasswordBasedSshConfiguration gdlPasswordBasedSshConfiguration) {
-            LOGGER.debug("Using password-based SSH authentication.");
+            LOGGER.info("Using password based SSH authentication to clone the repository.");
 
             UsernamePasswordCredentialsProvider credentialsProvider =
                     createPasswordCredentialsProvider(gdlPasswordBasedSshConfiguration.getUsername(),
@@ -429,10 +417,10 @@ public class GdlGitConfiguration {
     private File getKnownHostsFileOrNull() {
         //Returns the default known-hosts file if it exists, or null otherwise.
 
-        if(gitAuthConfiguration instanceof GdlKeyBasedSshConfiguration gdlPasswordBasedSshConfiguration) {
+        if(gitAuthConfiguration instanceof GdlKeyBasedSshConfiguration gdlKeyBasedSshConfiguration) {
             LOGGER.debug("Try to load known-hosts file from key-based SSH configuration.");
 
-            return gdlPasswordBasedSshConfiguration.getKnownHostsFile();
+            return gdlKeyBasedSshConfiguration.getKnownHostsFile();
         }
 
         if(gitAuthConfiguration instanceof GdlPasswordBasedSshConfiguration gdlPasswordBasedSshConfiguration) {
