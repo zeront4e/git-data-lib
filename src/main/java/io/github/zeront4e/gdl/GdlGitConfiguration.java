@@ -396,8 +396,15 @@ public class GdlGitConfiguration {
 
         File knownHostsFile = getKnownHostsFileOrNull();
 
-        sshSessionFactoryBuilder.setServerKeyDatabase((ignoredHomeDirectory, ignoredSshDirectory) ->
-                new KnownHostsServerKeyDatabase(knownHostsFile));
+        if(knownHostsFile != null) {
+            KnownHostsServerKeyDatabase knownHostsServerKeyDatabase = new KnownHostsServerKeyDatabase(knownHostsFile);
+
+            LOGGER.debug("Try to use known-hosts file: {}", knownHostsFile.getAbsolutePath());
+
+            sshSessionFactoryBuilder.setDefaultKnownHostsFiles(file -> List.of(knownHostsFile.toPath()));
+
+            sshSessionFactoryBuilder.setServerKeyDatabase((file, file2) -> knownHostsServerKeyDatabase);
+        }
 
         return sshSessionFactoryBuilder;
     }
