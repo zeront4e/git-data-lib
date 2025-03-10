@@ -18,7 +18,7 @@ package io.github.zeront4e.gdl;
 import io.github.zeront4e.gdl.configurations.common.GdlBaseConfiguration;
 import io.github.zeront4e.gdl.configurations.common.GdlLocalConfiguration;
 import io.github.zeront4e.gdl.configurations.common.GdlOnlineConfiguration;
-import io.github.zeront4e.gdl.configurations.ssh.*;
+ import io.github.zeront4e.gdl.configurations.auth.*;
 import org.apache.sshd.common.config.keys.FilePasswordProvider;
 import org.apache.sshd.common.util.security.SecurityUtils;
 import org.eclipse.jgit.api.*;

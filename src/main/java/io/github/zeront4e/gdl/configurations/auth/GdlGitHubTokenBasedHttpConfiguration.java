@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package io.github.zeront4e.gdl.configurations.ssh;
+package io.github.zeront4e.gdl.configurations.auth;
 
 /**
  * Configuration class for GitHub HTTP connections using token-based authentication.
