@@ -18,7 +18,8 @@ import java.util.*;
 class KnownHostsServerKeyDatabase implements ServerKeyDatabase {
     private static final Logger LOGGER = LoggerFactory.getLogger(KnownHostsServerKeyDatabase.class);
 
-    private final Map<String, List<PublicKey>> hostPortPublicKeysCacheMap = new HashMap<>();
+    private final Map<String, List<PublicKey>> hostPortPublicKeysCacheMap =
+            Collections.synchronizedMap(new HashMap<>());
 
     private final File knownHostsFile;
 
@@ -83,7 +84,8 @@ class KnownHostsServerKeyDatabase implements ServerKeyDatabase {
             }
         }
 
-        return hostPortPublicKeysCacheMap.get(inetSocketAddress.getHostName().toLowerCase(Locale.ENGLISH));
+        return hostPortPublicKeysCacheMap.getOrDefault(inetSocketAddress.getHostName().toLowerCase(Locale.ENGLISH),
+                List.of());
     }
 
     private static List<PublicKey> findMatchingPublicKeys(File knownHostsFile, String hostName,
@@ -101,7 +103,7 @@ class KnownHostsServerKeyDatabase implements ServerKeyDatabase {
                 if (tmpEntry != null) {
                     KnownHostHashValue hashValue = tmpEntry.getHashedEntry();
 
-                    boolean parseEntry = false;
+                    boolean parseEntry;
 
                     if(hashValue == null) {
                         Optional<?> optionalMatch = tmpEntry.getPatterns().stream().filter(tmpPatternEntry -> {
@@ -133,7 +135,7 @@ class KnownHostsServerKeyDatabase implements ServerKeyDatabase {
 
                     if(parseEntry) {
                         try {
-                            LOGGER.info("Try to parse known-host public key. Host: {} Port: {} Key type: {}", hostName,
+                            LOGGER.debug("Try to parse known-host public key. Host: {} Port: {} Key type: {}", hostName,
                                     optionalPort, tmpEntry.getKeyEntry().getKeyType());
 
                             keys.add(tmpEntry.getKeyEntry().resolvePublicKey(null,
