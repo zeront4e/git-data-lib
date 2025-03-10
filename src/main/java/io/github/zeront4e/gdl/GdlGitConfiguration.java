@@ -380,6 +380,8 @@ public class GdlGitConfiguration {
 
         try {
             temporaryDirectory = Files.createTempDirectory("ssh-temp-dir");
+
+            temporaryDirectory.toFile().deleteOnExit();
         }
         catch (IOException ioException) {
             throw new Exception("Failed to create temporary directory.", ioException);
