@@ -78,11 +78,12 @@ There are also multiple ways to authenticate against the remote repository (orig
 Credentials based authentication:
 
 ```java
-import io.github.zeront4e.gdl.configurations.common.GdlLocalConfiguration;
+
 import io.github.zeront4e.gdl.GdlOfflineConfiguration;
 import io.github.zeront4e.gdl.GdlGitConfiguration;
+import io.github.zeront4e.gdl.configurations.auth.GdlPasswordBasedHttpConfiguration;
 import io.github.zeront4e.gdl.configurations.common.GdlOnlineConfiguration;
-import io.github.zeront4e.gdl.configurations.ssh.GdlPasswordBasedSshConfiguration;
+import io.github.zeront4e.gdl.configurations.auth.GdlPasswordBasedSshConfiguration;
 
 import java.io.File;
 import java.util.Map;
@@ -96,11 +97,11 @@ public static void main(String[] args) {
     );
 
     String branch = "main";
-    
+
     GdlOnlineConfiguration configuration = new GdlOnlineConfiguration(
             repoDir,
             credentials,
-            branch,                           
+            branch,
             "https://github.com/user/repo",   //remote repository URL
             0                                 //push delay in milliseconds (or 0 to set none)
     );
@@ -109,21 +110,21 @@ public static void main(String[] args) {
 
     //Credentials based authentication:
 
-    GdlPasswordBasedSshConfiguration passwordBasedSshConfiguration = new GdlPasswordBasedSshConfiguration("username",
+    GdlPasswordBasedHttpConfiguration passwordBasedHttpConfiguration = new GdlPasswordBasedHttpConfiguration("username",
             "password", knownHostsFile);
 
     GdlGitConfiguration gdlGitConfiguration = new GdlGitConfiguration(configuration,
-            passwordBasedSshConfiguration);
+            passwordBasedHttpConfiguration);
 }
 ```
 
 Token based authentication:
 
 ```java
+import io.github.zeront4e.gdl.configurations.auth.GdlTokenBasedHttpConfiguration;
 import io.github.zeront4e.gdl.configurations.common.GdlLocalConfiguration;
 import io.github.zeront4e.gdl.GdlOfflineConfiguration;
 import io.github.zeront4e.gdl.GdlGitConfiguration;
-import io.github.zeront4e.gdl.configurations.ssh.GdlTokenBasedSshConfiguration;
 
 import java.io.File;
 import java.util.Map;
@@ -150,11 +151,11 @@ public static void main(String[] args) {
 
     //Token based authentication:
 
-    GdlTokenBasedSshConfiguration tokenBasedSshConfiguration = new GdlTokenBasedSshConfiguration("token",
+    GdlTokenBasedHttpConfiguration tokenBasedHttpConfiguration = new GdlTokenBasedHttpConfiguration("token",
             knownHostsFile);
 
     GdlGitConfiguration gdlGitConfiguration = new GdlGitConfiguration(configuration,
-            tokenBasedSshConfiguration);
+            tokenBasedHttpConfiguration);
 }
 ```
 
@@ -164,7 +165,7 @@ Asymmetric key based authentication:
 import io.github.zeront4e.gdl.configurations.common.GdlLocalConfiguration;
 import io.github.zeront4e.gdl.GdlOfflineConfiguration;
 import io.github.zeront4e.gdl.GdlGitConfiguration;
-import io.github.zeront4e.gdl.configurations.ssh.GdlKeyBasedSshConfiguration;
+import io.github.zeront4e.gdl.configurations.auth.GdlKeyBasedSshConfiguration;
 
 import java.io.File;
 import java.util.Map;
@@ -178,12 +179,12 @@ public static void main(String[] args) {
     );
 
     String branch = "main";
-    
+
     GdlLocalConfiguration configuration = new GdlLocalConfiguration(
             repoDir,
             credentials,
             branch,
-            "https://github.com/user/repo",   //remote repository URL
+            "git@github.com:user/repo.git",   //remote repository URL
             0                                 //push delay in milliseconds (or 0 to set none)
     );
 
@@ -493,9 +494,7 @@ public class UserCredentials {
 You can add, query, update and delete data-objects as seen in the previous example. The only difference is to also 
 provide the "user-data-secret"-secret.
 
-### Usa a custom repository name
-
-### Use a custom repository name (@GdlDataRepositoryName)
+### Use a custom repository name
 
 By default, Gdl uses the class name of your data object as the repository name. However, you can specify a custom 
 repository name using the `@GdlDataRepositoryName` annotation. This ensures that the repository name stays the same,
