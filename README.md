@@ -1,6 +1,6 @@
-# Git Data Library (Gdl)
+# Git Data Library (GDL)
 
-Git Data Library (Gdl) is a Java library that provides a simple and efficient way to store, retrieve, and manage data 
+Git Data Library (GDL) is a Java library that provides a simple and efficient way to store, retrieve, and manage data 
 objects using Git as a persistent storage backend. This library allows you to treat Git repositories as data stores, 
 with automatic versioning, history tracking, and collaboration capabilities inherent to Git.
 
@@ -8,12 +8,26 @@ with automatic versioning, history tracking, and collaboration capabilities inhe
 
 - Store Plain Old Java Objects (data-objects) in a Git repository
 - Encrypt certain data-object properties or the whole data-object with custom secrets
-- Sync data to a remote repository using SSH (with multiple supported authentication methods)
+- Sync data to a remote repository using SSH (with multiple supported authentication methods (see package **io.github.zeront4e.gdl.configurations.auth**))
+- Store certain field-properties cached in memory
+
+## Download
+
+You can either download the repository or use GitHub packages to download an artifact (embed the following snippet into 
+your POM file).
+
+```xml
+<repositories>
+    <repository>
+        <id>github</id>
+        <url>https://maven.pkg.github.com/zeront4e/git-data-lib</url>
+    </repository>
+</repositories>
+```
 
 ## Installation
 
-Download the library and run the Maven "install" target. You can embed the library afterward using the following 
-snippets.
+Run the Maven "install" target. You can embed the library afterward using the following snippet.
 
 ### Maven
 
@@ -23,12 +37,6 @@ snippets.
     <artifactId>git-data-lib</artifactId>
     <version>1.0.0</version>
 </dependency>
-```
-
-### Gradle
-
-```
-implementation 'io.github.zeront4e:git-data-lib:1.0.0'
 ```
 
 ## Getting Started
@@ -75,7 +83,7 @@ There are also multiple ways to authenticate against the remote repository (orig
   - Token based authentication (a platform issued token)
   - Asymmetric key based authentication (using SSH keys)
 
-Credentials based authentication:
+**Credentials based authentication:**
 
 ```java
 
@@ -118,7 +126,9 @@ public static void main(String[] args) {
 }
 ```
 
-Token based authentication:
+**Token based authentication:**
+
+Please use the class 'GdlGitHubTokenBasedHttpConfiguration' to authenticate against GitHub using a classic personal access token.
 
 ```java
 import io.github.zeront4e.gdl.configurations.auth.GdlTokenBasedHttpConfiguration;
@@ -159,7 +169,7 @@ public static void main(String[] args) {
 }
 ```
 
-Asymmetric key based authentication:
+**Asymmetric key based authentication:**
 
 ```java
 import io.github.zeront4e.gdl.configurations.common.GdlLocalConfiguration;
@@ -329,7 +339,7 @@ This library provides two levels of encryption for your data:
 1. **Field-level encryption** - Encrypt specific sensitive fields using `@GdlSecretProperty`
 2. **Object-level encryption** - Encrypt the entire data-object using `@GdlSecretDataRepository`
 
-You can use these encryption methods separately or combine them for enhanced security.
+You can use these encryption methods separately or combine them.
 
 ##### Field-level encryption
 
