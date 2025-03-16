@@ -23,6 +23,7 @@ import org.apache.sshd.common.config.keys.FilePasswordProvider;
 import org.apache.sshd.common.util.security.SecurityUtils;
 import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.transport.*;
 import org.eclipse.jgit.transport.sshd.JGitKeyCache;
 import org.eclipse.jgit.transport.sshd.SshdSessionFactory;
@@ -96,6 +97,55 @@ public class GdlGitConfiguration {
         gdlBaseConfiguration = gdlOnlineConfiguration;
 
         gitAuthConfiguration = gdlTokenBasedHttpConfiguration;
+    }
+
+    /**
+     * Returns all branches/tags of a remote repository, if the correct authentication is set.
+     * @return The branches/tags of the remote repository.
+     * @throws GitAPIException An unexpected exception.
+     */
+    public Collection<Ref> lsRepositoryOrFail() throws GitAPIException {
+        GdlOnlineConfiguration gdlOnlineConfiguration = getGdlOnlineConfigurationOrNull();
+
+        LsRemoteCommand lsRemoteCommand = Git.lsRemoteRepository()
+                .setRemote(gdlOnlineConfiguration.getGitRepositoryString());
+
+        LOGGER.info("Try to list remote branches. Repository: {}", gdlOnlineConfiguration.getGitRepositoryString());
+
+        if(gitAuthConfiguration instanceof GdlPasswordBasedSshConfiguration gdlPasswordBasedSshConfiguration) {
+            LOGGER.info("Using password based SSH authentication to list repository.");
+
+            UsernamePasswordCredentialsProvider credentialsProvider =
+                    createPasswordCredentialsProvider(gdlPasswordBasedSshConfiguration.getUsername(),
+                            gdlPasswordBasedSshConfiguration.getPassword());
+
+            lsRemoteCommand.setCredentialsProvider(credentialsProvider);
+        }
+        else if(gitAuthConfiguration instanceof GdlPasswordBasedHttpConfiguration gdlPasswordBasedHttpConfiguration) {
+            LOGGER.debug("Using password-based HTTP authentication for list-command.");
+
+            UsernamePasswordCredentialsProvider credentialsProvider;
+
+            if(gitAuthConfiguration instanceof GdlGitHubTokenBasedHttpConfiguration) {
+                LOGGER.info("Using token based GitHub HTTP authentication to list the repository.");
+
+                credentialsProvider = createPasswordCredentialsProvider(gdlPasswordBasedHttpConfiguration.getPassword(),
+                        gdlPasswordBasedHttpConfiguration.getUsername());
+            }
+            else {
+                LOGGER.info("Using password based HTTP authentication to list the repository.");
+
+                credentialsProvider = createPasswordCredentialsProvider(gdlPasswordBasedHttpConfiguration.getUsername(),
+                        gdlPasswordBasedHttpConfiguration.getPassword());
+            }
+
+            lsRemoteCommand.setCredentialsProvider(credentialsProvider);
+        }
+        else {
+            LOGGER.debug("Using key-based SSH authentication for list-command.");
+        }
+
+        return lsRemoteCommand.call();
     }
 
     boolean isRemoteNotAvailable() {
