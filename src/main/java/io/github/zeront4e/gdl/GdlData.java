@@ -73,6 +73,14 @@ public class GdlData<Data> {
         return data;
     }
 
+    /**
+     * Updates the data object stored in this container.
+     * @param data The new data object to store.
+     */
+    public void setData(Data data) {
+        this.data = data;
+    }
+
     void setId(String id) {
         this.id = id;
     }
@@ -83,10 +91,6 @@ public class GdlData<Data> {
 
     void setUpdateTimestamp(long updateTimestamp) {
         this.updateTimestamp = updateTimestamp;
-    }
-
-    void setData(Data data) {
-        this.data = data;
     }
 
     @Override
