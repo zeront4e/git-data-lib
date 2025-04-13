@@ -180,6 +180,10 @@ public class GdlGitConfiguration {
         return null;
     }
 
+    RmCommand createRmCommand() throws GitAPIException, IOException {
+        return getCachedGitInstance().rm();
+    }
+
     AddCommand createAddCommand() throws GitAPIException, IOException {
         return getCachedGitInstance().add();
     }

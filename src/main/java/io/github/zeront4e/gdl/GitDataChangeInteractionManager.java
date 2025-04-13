@@ -186,11 +186,21 @@ class GitDataChangeInteractionManager implements DataManager.OnDataChangeCallbac
 
         relativeFilePath = relativeFilePath.replace(File.separator, "/");
 
-        //Execute add command.
+        if(dataContainerFile.exists()) {
+            //Execute add command.
 
-        gdlGitConfiguration.createAddCommand()
-                .addFilepattern(relativeFilePath)
-                .call();
+            gdlGitConfiguration.createAddCommand()
+                    .addFilepattern(relativeFilePath)
+                    .call();
+        }
+        else {
+            //Execute rm command.
+
+            gdlGitConfiguration.createRmCommand()
+                    .addFilepattern(relativeFilePath)
+                    .setCached(true) //The file was already deleted. Just update the index.
+                    .call();
+        }
 
         //Execute commit command.
 
