@@ -15,6 +15,7 @@ limitations under the License.
 
 package io.github.zeront4e.gdl;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -84,6 +85,8 @@ class DataManager {
 
         objectMapper = new ObjectMapper(new YAMLFactory());
         objectMapper.findAndRegisterModules();
+
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     <Type> Stream<GdlData<Type>> queryData(Class<Type> dataType) {
