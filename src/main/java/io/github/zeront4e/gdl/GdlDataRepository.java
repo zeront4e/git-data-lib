@@ -19,6 +19,7 @@ import io.github.zeront4e.gdl.annotations.GdlCachedProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -162,6 +163,15 @@ public class GdlDataRepository<Type> {
         uidCachedGdlDataContainerMap.remove(gdlData.getId());
 
         return dataManager.deleteData(gdlData);
+    }
+
+    /**
+     * Returns the file belonging to a data container.
+     * @param gdlData The data container to get the file for.
+     * @return The file belonging to the container.
+     */
+    public synchronized File getDataFile(GdlData<Type> gdlData) {
+        return dataManager.getDataContainerFile(gdlData.getId(), gdlData.getData().getClass());
     }
 
     synchronized Stream<GdlData<Type>> getCachedData(GdlProcessingErrorCallback errorCallback) {

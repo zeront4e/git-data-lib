@@ -133,12 +133,16 @@ class DataManager {
         return Stream.empty();
     }
 
-    synchronized <Type> GdlData<Type> loadDataContainerFromDisk(String id, Class<Type> dataType) throws Exception {
+    synchronized <Type> File getDataContainerFile(String id, Class<Type> dataType) {
         //Try to obtain data-object container file.
 
         File dataContainersDirectory = getDataContainerDirectory(dataType);
 
-        File dataContainerFile = new File(dataContainersDirectory.getAbsolutePath() + "/" + id + ".yaml");
+        return new File(dataContainersDirectory.getAbsolutePath() + "/" + id + ".yaml");
+    }
+
+    synchronized <Type> GdlData<Type> loadDataContainerFromDisk(String id, Class<Type> dataType) throws Exception {
+        File dataContainerFile = getDataContainerFile(id, dataType);
 
         return loadDataContainerFromDisk(dataContainerFile, dataType);
     }
