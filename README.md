@@ -11,23 +11,9 @@ with automatic versioning, history tracking, and collaboration capabilities inhe
 - Sync data to a remote repository using SSH (with multiple supported authentication methods (see package **io.github.zeront4e.gdl.configurations.auth**))
 - Store certain field-properties cached in memory
 
-## Download
-
-You can either download the repository or use GitHub packages to download an artifact (embed the following snippet into 
-your POM file).
-
-```xml
-<repositories>
-    <repository>
-        <id>github</id>
-        <url>https://maven.pkg.github.com/zeront4e/git-data-lib</url>
-    </repository>
-</repositories>
-```
-
 ## Installation
 
-Run the Maven "install" target. You can embed the library afterward using the following snippet.
+The library is available from the central Maven repository. You can import the library using the following snippet.
 
 ### Maven
 
@@ -35,8 +21,14 @@ Run the Maven "install" target. You can embed the library afterward using the fo
 <dependency>
     <groupId>io.github.zeront4e</groupId>
     <artifactId>git-data-lib</artifactId>
-    <version>1.0.0</version>
+    <version>1.2.1</version>
 </dependency>
+```
+
+### Gradle
+
+```groovy
+implementation 'io.github.zeront4e.gdl:git-data-lib:1.2.1'
 ```
 
 ## Getting Started
